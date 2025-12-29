@@ -1,0 +1,82 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-reader
+  labels:
+    app: {{ .Release.Name }}
+rules:
+  # Core resources - read only
+  - apiGroups: [""]
+    resources:
+      - pods/log
+      - endpoints
+      - events
+      - namespaces
+      - nodes
+      - persistentvolumeclaims
+      - persistentvolumes
+      - replicationcontrollers
+      - resourcequotas
+      - secrets
+      - serviceaccounts
+    verbs: ["get", "list", "watch"]
+  
+  # Core resources - read + delete (with confirmation in UI)
+  - apiGroups: [""]
+    resources:
+      - pods
+      - services
+      - configmaps
+    verbs: ["get", "list", "watch", "delete"]
+  
+  # Apps resources - read only
+  - apiGroups: ["apps"]
+    resources:
+      - replicasets
+      - statefulsets
+      - daemonsets
+    verbs: ["get", "list", "watch"]
+  
+  # Apps deployments - read + write (restart, scale, delete - with confirmation in UI)
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+    verbs: ["get", "list", "watch", "patch", "delete"]
+  
+  # Batch resources - read + delete
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch", "delete"]
+  
+  # Networking - read only
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+      - networkpolicies
+    verbs: ["get", "list", "watch"]
+  
+  # Autoscaling - read only
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list", "watch"]
+  
+  # Metrics - read only
+  - apiGroups: ["metrics.k8s.io"]
+    resources:
+      - pods
+      - nodes
+    verbs: ["get", "list"]
+  
+  # ArgoCD - read only
+  - apiGroups: ["argoproj.io"]
+    resources:
+      - applications
+      - applicationsets
+      - appprojects
+    verbs: ["get", "list", "watch"]
+{{- end }}
+

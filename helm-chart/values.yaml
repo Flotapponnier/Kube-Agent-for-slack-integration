@@ -1,0 +1,43 @@
+# Kube-Agent Helm Values
+
+replicaCount: 1
+
+image:
+  repository: YOUR_DOCKER_REGISTRY/kube-agent
+  tag: latest
+  pullPolicy: Always
+
+# Slack configuration (required)
+slack:
+  # Bot token (xoxb-...)
+  botToken: ""
+  # App token for Socket Mode (xapp-...)
+  appToken: ""
+
+# OpenAI configuration (required)
+openai:
+  apiKey: ""
+  model: "gpt-4o"
+
+# Logging
+logLevel: "info"
+
+# RBAC
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: ""
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
