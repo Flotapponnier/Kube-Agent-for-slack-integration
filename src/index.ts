@@ -1,19 +1,19 @@
 import { App, LogLevel, SocketModeReceiver } from '@slack/bolt';
+import { createServer } from 'node:http';
 import { config } from './config.ts';
 import { registerHandlers } from './slack/handlers.ts';
 
 console.log('Starting Kube-Bot...');
 
+// Track connection state for health checks
+let isConnected = false;
+let lastPingTime = Date.now();
+
 // Create a custom SocketModeReceiver with extended timeouts
-// This prevents the connection from being dropped due to slow ping responses
 const socketModeReceiver = new SocketModeReceiver({
   appToken: config.SLACK_APP_TOKEN,
   clientOptions: {
-    // Increase client ping timeout (default: 5000ms)
-    // Time to wait for a pong response from Slack
     clientPingTimeout: 30000,
-    // Increase server ping timeout (default: 30000ms)  
-    // Time to wait between server pings before considering connection dead
     serverPingTimeout: 60000,
   },
   logLevel: config.LOG_LEVEL === 'debug' ? LogLevel.DEBUG : LogLevel.INFO,
@@ -56,14 +56,31 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
+// Health check HTTP server for Kubernetes liveness probe
+const healthServer = createServer((req, res) => {
+  lastPingTime = Date.now();
+  if (req.url === '/health' || req.url === '/healthz') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', connected: isConnected, uptime: process.uptime() }));
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+});
+
 // Start the app
 (async () => {
   try {
     await app.start();
+    isConnected = true;
     console.log('Kube-Bot is running!');
     console.log(`   Model: ${config.OPENAI_MODEL}`);
     console.log(`   Log level: ${config.LOG_LEVEL}`);
-    console.log('   Ping timeouts: client=30s, server=60s');
+    
+    // Start health check server on port 3000
+    healthServer.listen(3000, () => {
+      console.log('   Health check: http://localhost:3000/health');
+    });
   } catch (error) {
     console.error('Failed to start Kube-Bot:', error);
     process.exit(1);
