@@ -35,23 +35,23 @@ spec:
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
-          # Liveness probe - restarts pod if unresponsive
+          # Liveness probe - restarts pod if unresponsive for extended period
           livenessProbe:
             httpGet:
               path: /health
               port: 3000
-            initialDelaySeconds: 30
-            periodSeconds: 30
+            initialDelaySeconds: 60
+            periodSeconds: 60
             timeoutSeconds: 10
-            failureThreshold: 3
+            failureThreshold: 5
           # Readiness probe - marks pod as ready when healthy
           readinessProbe:
             httpGet:
               path: /health
               port: 3000
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 5
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 10
             failureThreshold: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
